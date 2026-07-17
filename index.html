@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PyCSS - Python IDE</title>
+<style>
+:root {
+  --bg:       #13141a;
+  --s1:       #1b1c23;
+  --s2:       #22232c;
+  --s3:       #2a2b35;
+  --bd:       #2e3040;
+  --bd2:      #3a3c4e;
+  --tx:       #c5c8d4;
+  --tx2:      #8e92a4;
+  --tx3:      #5c6070;
+  --ac:       #4d8ef8;
+  --ac-dim:   rgba(77,142,248,.1);
+  --ac-dim2:  rgba(77,142,248,.18);
+  --gr:       #3d9e52;
+  --gr-dim:   rgba(61,158,82,.12);
+  --rd:       #d95252;
+  --rd-dim:   rgba(217,82,82,.12);
+  --am:       #c08a36;
+  --cy:       #3598c5;
+  --pu:       #9b72e0;
+  --r:        4px;
+  --font-ui:  -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code','Consolas','Courier New',monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--tx); font-family: var(--font-ui); font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bd2); border-radius: 2px; }
+
+#topbar {
+  height: 44px; background: var(--s1); border-bottom: 1px solid var(--bd);
+  display: flex; align-items: center; flex-shrink: 0; z-index: 20;
+}
+.tb-brand {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px; border-right: 1px solid var(--bd); height: 100%;
+  text-decoration: none; flex-shrink: 0;
+}
+.tb-brand-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 3px;
+  background: var(--ac); color: #fff; font-size: 11px; font-weight: 800;
+  letter-spacing: -.5px; font-family: var(--font-ui);
+}
+.tb-brand-name { font-weight: 600; font-size: 13px; color: var(--tx); letter-spacing: .1px; }
+.tb-brand-name span { color: var(--tx3); font-weight: 400; }
+
+.tb-tabs {
+  display: flex; align-items: stretch; height: 100%;
+  overflow-x: auto; flex: 1; padding: 0 4px;
+  scrollbar-width: none;
+}
+.tb-tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  display: flex; align-items: center; gap: 5px; padding: 0 12px;
+  font-size: 12px; font-family: var(--font-mono); color: var(--tx3);
+  border-right: 1px solid var(--bd); cursor: pointer;
+  white-space: nowrap; transition: color .1s, background .1s;
+  flex-shrink: 0; user-select: none; position: relative;
+}
+.tab:hover { color: var(--tx2); background: var(--s2); }
+.tab.active { color: var(--tx); background: var(--bg); }
+.tab.active::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--ac);
+}
+.tab-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--bd2); flex-shrink: 0; }
+.tab.active .tab-dot { background: var(--ac); }
+.tab-x {
+  width: 14px; height: 14px; display: flex; align-items: center;
+  justify-content: center; border-radius: 2px; color: transparent;
+  font-size: 10px; transition: all .1s; margin-left: 2px;
+}
+.tab:hover .tab-x, .tab.active .tab-x { color: var(--tx3); }
+.tab-x:hover { background: var(--s3); color: var(--rd) !important; }
+
+.tab-new {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 44px; color: var(--tx3); font-size: 17px;
+  cursor: pointer; border-right: 1px solid var(--bd); transition: color .1s;
+  flex-shrink: 0; font-weight: 300;
+}
+.tab-new:hover { color: var(--ac); background: var(--s2); }
+
+.tb-right {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 12px; flex-shrink: 0; border-left: 1px solid var(--bd);
+}
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 3px;
+  border: 1px solid var(--bd); background: transparent;
+  font-size: 11px; color: var(--tx3); white-space: nowrap;
+}
+.status-pill.ok    { color: var(--gr); border-color: rgba(61,158,82,.3); background: var(--gr-dim); }
+.status-pill.err   { color: var(--rd); border-color: rgba(217,82,82,.3); background: var(--rd-dim); }
+.status-pill.busy  { color: var(--am); border-color: rgba(192,138,54,.3); background: rgba(192,138,54,.1); }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.status-pill.busy .status-dot { animation: spin-dot 1.2s linear infinite; }
+@keyframes spin-dot { 0% { opacity: 1; } 50% { opacity: .2; } 100% { opacity: 1; } }
+
+.vd { width: 1px; height: 18px; background: var(--bd); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; font-size: 12px; font-family: var(--font-ui);
+  font-weight: 500; border-radius: var(--r); cursor: pointer;
+  transition: background .1s, color .1s, border-color .1s;
+  border: 1px solid var(--bd2); background: transparent; color: var(--tx2);
+  white-space: nowrap;
+}
+.btn:hover { background: var(--s3); color: var(--tx); border-color: var(--bd2); }
+.btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+.btn-run {
+  background: var(--ac); color: #fff; border-color: transparent;
+  font-weight: 600;
+}
+.btn-run:hover { background: #5e9cf8; border-color: transparent; }
+.btn-run.busy { background: var(--am); border-color: transparent; cursor: wait; }
+.btn-run.busy:hover { background: var(--am); }
+
+.btn-stop:hover { color: var(--rd); border-color: var(--rd); background: var(--rd-dim); }
+.btn-dl:hover { color: var(--cy); border-color: var(--cy); background: rgba(53,152,197,.1); }
+.btn-import:hover { color: var(--pu); border-color: var(--pu); background: rgba(155,114,224,.1); }
+
+kbd { font-family: var(--font-mono); font-size: 10px; color: var(--tx3); margin-left: 1px; }
+
+#workspace { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+
+#sidebar {
+  width: 196px; flex-shrink: 0; background: var(--s1);
+  border-right: 1px solid var(--bd); display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sb-head {
+  padding: 0 12px; height: 32px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+}
+.sb-label { font-size: 10px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--tx3); }
+.sb-add {
+  display: flex; align-items: center; gap: 3px; font-size: 11px;
+  color: var(--tx3); cursor: pointer; padding: 2px 6px;
+  border-radius: 3px; border: 1px solid transparent;
+  transition: all .1s; background: transparent; font-family: var(--font-ui);
+}
+.sb-add:hover { color: var(--ac); background: var(--ac-dim); border-color: rgba(77,142,248,.25); }
+
+.sb-list { flex: 1; overflow-y: auto; }
+.fi {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 12px; cursor: pointer;
+  transition: background .08s; border-left: 2px solid transparent;
+}
+.fi:hover { background: var(--s2); }
+.fi.active { background: var(--ac-dim); border-left-color: var(--ac); }
+.fi-name {
+  font-size: 12px; font-family: var(--font-mono); color: var(--tx2);
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fi.active .fi-name { color: var(--ac); }
+.fi-rm {
+  width: 14px; height: 14px; display: flex; align-items: center;
+  justify-content: center; border-radius: 2px; font-size: 10px;
+  color: transparent; transition: all .1s; flex-shrink: 0;
+}
+.fi:hover .fi-rm { color: var(--tx3); }
+.fi-rm:hover { background: var(--s3); color: var(--rd) !important; }
+
+.sb-footer {
+  padding: 8px 12px; border-top: 1px solid var(--bd);
+  font-size: 10.5px; color: var(--tx3); line-height: 1.6;
+}
+.sb-footer code { font-family: var(--font-mono); font-size: 10px; color: var(--tx2); background: var(--s3); padding: 1px 3px; border-radius: 2px; }
+
+#editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.editor-bar {
+  height: 30px; background: var(--s2); border-bottom: 1px solid var(--bd);
+  display: flex; align-items: center; padding: 0 14px; flex-shrink: 0; gap: 12px;
+}
+.editor-bar-file { font-size: 11px; font-family: var(--font-mono); color: var(--tx3); }
+.editor-bar-cursor { font-size: 11px; font-family: var(--font-mono); color: var(--tx3); margin-left: auto; }
+#editor-wrap { flex: 1; overflow: hidden; }
+
+.cm-editor { height: 100% !important; }
+.cm-editor.cm-focused { outline: none !important; }
+.cm-scroller { overflow: auto !important; font-family: var(--font-mono) !important; font-size: 13px !important; }
+.cm-content { padding: 8px 0 !important; }
+.cm-gutters { border-right: 1px solid var(--bd) !important; background: var(--bg) !important; min-width: 40px; }
+.cm-lineNumbers .cm-gutterElement { padding: 0 12px 0 6px !important; }
+
+#output-pane {
+  width: 400px; flex-shrink: 0; border-left: 1px solid var(--bd);
+  display: flex; flex-direction: column; min-height: 0; background: var(--bg);
+}
+.out-tabs {
+  display: flex; background: var(--s1); border-bottom: 1px solid var(--bd);
+  flex-shrink: 0;
+}
+.out-tab {
+  padding: 7px 14px; font-size: 11.5px; font-weight: 500;
+  color: var(--tx3); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: color .1s;
+}
+.out-tab:hover { color: var(--tx2); }
+.out-tab.active { color: var(--tx); border-bottom-color: var(--ac); }
+
+.out-panel { flex: 1; display: none; flex-direction: column; overflow: hidden; min-height: 0; }
+.out-panel.active { display: flex; }
+
+#out-text {
+  flex: 1; overflow-y: auto; padding: 10px 12px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word; color: var(--tx);
+}
+.o-sys  { color: var(--tx3); }
+.o-ok   { color: var(--gr); }
+.o-err  { color: var(--rd); }
+.o-warn { color: var(--am); }
+.o-out  { color: var(--tx); }
+.o-err-text { color: var(--rd); font-weight: 600; }
+
+.out-bar {
+  height: 28px; background: var(--s1); border-top: 1px solid var(--bd);
+  display: flex; align-items: center; padding: 0 10px; gap: 8px; flex-shrink: 0;
+}
+.out-bar span { font-size: 10.5px; color: var(--tx3); }
+.out-bar .time { color: var(--cy); }
+.out-bar-r { margin-left: auto; }
+.btn-xs {
+  padding: 2px 7px; font-size: 10.5px; font-family: var(--font-ui);
+  background: transparent; color: var(--tx3); border: 1px solid var(--bd);
+  border-radius: 3px; cursor: pointer; transition: all .1s;
+}
+.btn-xs:hover { color: var(--tx); border-color: var(--bd2); }
+
+#out-plots { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.plot-wrap { border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; background: var(--s1); }
+.plot-wrap img { width: 100%; display: block; }
+.plot-cap { padding: 4px 10px; font-size: 10.5px; font-family: var(--font-mono); color: var(--tx3); }
+.plots-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 8px; color: var(--tx3); font-size: 12.5px; text-align: center; line-height: 1.6; }
+
+#panel-terminal { background: var(--bg); }
+#term-out {
+  flex: 1; overflow-y: auto; padding: 8px 12px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+.t-ok   { color: var(--gr); }
+.t-err  { color: var(--rd); }
+.t-sys  { color: var(--cy); }
+.t-info { color: var(--tx3); }
+.t-in   { color: var(--ac); }
+.t-out  { color: var(--tx); }
+
+.term-row {
+  display: flex; align-items: center; border-top: 1px solid var(--bd);
+  flex-shrink: 0; background: var(--s1);
+}
+#term-prompt { font-family: var(--font-mono); font-size: 12px; color: var(--gr); padding: 6px 0 6px 12px; flex-shrink: 0; white-space: nowrap; }
+#term-prompt.cont { color: var(--tx3); }
+#term-in {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--font-mono); font-size: 12px; color: var(--tx);
+  caret-color: var(--ac); padding: 6px 12px 6px 0;
+}
+
+.resizer { width: 3px; background: var(--bd); cursor: col-resize; flex-shrink: 0; transition: background .1s; }
+.resizer:hover, .resizer.active { background: var(--ac); }
+
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  z-index: 100; display: none; align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--s1); border: 1px solid var(--bd2); border-radius: 6px;
+  padding: 20px; width: 380px; max-width: 90vw;
+}
+.modal h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--tx); }
+.modal p { font-size: 12px; color: var(--tx3); margin-bottom: 12px; line-height: 1.5; }
+.modal input {
+  width: 100%; padding: 7px 10px; background: var(--bg);
+  border: 1px solid var(--bd2); border-radius: var(--r);
+  color: var(--tx); font-size: 12px; font-family: var(--font-mono);
+  outline: none; margin-bottom: 12px; transition: border-color .1s;
+}
+.modal input:focus { border-color: var(--ac); }
+.modal-row { display: flex; gap: 6px; justify-content: flex-end; }
+.modal-row .btn-cancel { padding: 5px 12px; font-size: 12px; font-family: var(--font-ui); background: transparent; color: var(--tx3); border: 1px solid var(--bd2); border-radius: var(--r); cursor: pointer; }
+.modal-row .btn-cancel:hover { color: var(--tx); }
+.modal-row .btn-submit { padding: 5px 14px; font-size: 12px; font-family: var(--font-ui); font-weight: 600; background: var(--ac); color: #fff; border: none; border-radius: var(--r); cursor: pointer; }
+.modal-row .btn-submit:hover { background: #5e9cf8; }
+
+#loader {
+  position: fixed; inset: 0; background: var(--bg); z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; transition: opacity .3s;
+}
+.ld-badge {
+  width: 42px; height: 42px; border-radius: 8px; background: var(--ac);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -.5px;
+  font-family: var(--font-ui);
+}
+.ld-name { font-size: 18px; font-weight: 600; color: var(--tx); }
+.ld-name span { color: var(--tx3); font-weight: 400; }
+.ld-bar-wrap { width: 240px; height: 2px; background: var(--s3); border-radius: 1px; overflow: hidden; }
+.ld-bar { height: 100%; background: var(--ac); border-radius: 1px; animation: ld-slide 1.4s ease-in-out infinite; }
+@keyframes ld-slide { 0%{width:0;margin-left:0} 50%{width:55%;margin-left:22%} 100%{width:0;margin-left:100%} }
+.ld-msg { font-size: 12px; color: var(--tx3); text-align: center; max-width: 300px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="ld-badge">Py</div>
+  <div class="ld-name">PyCSS <span>IDE</span></div>
+  <div class="ld-bar-wrap"><div class="ld-bar"></div></div>
+  <div class="ld-msg" id="ld-msg">Loading...</div>
+</div>
+
+<div id="topbar">
+  <div class="tb-brand">
+    <div class="tb-brand-badge">Py</div>
+    <div class="tb-brand-name">PyCSS <span>IDE</span></div>
+  </div>
+  <div class="tb-tabs" id="tb-tabs"></div>
+  <div class="tab-new" id="btn-new" title="New file">+</div>
+  <div class="tb-right">
+    <div class="status-pill" id="status-pill">
+      <div class="status-dot"></div>
+      <span id="status-txt">Loading</span>
+    </div>
+    <div class="vd"></div>
+    <input type="file" id="file-import-input" accept=".py" multiple style="display:none">
+    <button class="btn btn-import" id="btn-import">&#8593; Import</button>
+    <button class="btn btn-dl" id="btn-dl">&#8595; Save</button>
+    <button class="btn btn-stop" id="btn-stop">&#9632; Stop</button>
+    <button class="btn btn-run busy" id="btn-run" disabled>
+      &#9654; Run <kbd>^&#8629;</kbd>
+    </button>
+  </div>
+</div>
+
+<div id="workspace">
+  <div id="sidebar">
+    <div class="sb-head">
+      <span class="sb-label">Files</span>
+      <button class="sb-add" id="sb-add">+ New</button>
+    </div>
+    <div class="sb-list" id="sb-list"></div>
+    <div class="sb-footer">
+      Files run from virtual Desktop.<br>
+      Use <code>import</code> across files.<br>
+      Terminal: <code>!python file.py</code>
+    </div>
+  </div>
+
+  <div class="resizer" id="res-l"></div>
+
+  <div id="editor-pane">
+    <div class="editor-bar">
+      <span class="editor-bar-file" id="eb-file">main.py</span>
+      <span class="editor-bar-cursor" id="eb-cur">Ln 1, Col 1</span>
+    </div>
+    <div id="editor-wrap"></div>
+  </div>
+
+  <div class="resizer" id="res-r"></div>
+
+  <div id="output-pane">
+    <div class="out-tabs">
+      <div class="out-tab active" data-panel="output">Output</div>
+      <div class="out-tab" data-panel="plots">Plots</div>
+      <div class="out-tab" data-panel="terminal">Terminal</div>
+    </div>
+
+    <div class="out-panel active" id="panel-output">
+      <div id="out-text"><span class="o-sys">Ready. Press Run or Ctrl+Enter to execute.
+</span></div>
+      <div class="out-bar">
+        <span class="time" id="out-time"></span>
+        <div class="out-bar-r"><button class="btn-xs" id="btn-clear">Clear</button></div>
+      </div>
+    </div>
+
+    <div class="out-panel" id="panel-plots">
+      <div id="out-plots">
+        <div class="plots-empty">No plots yet.<br>Use matplotlib and call plt.show().</div>
+      </div>
+    </div>
+
+    <div class="out-panel" id="panel-terminal">
+      <div id="term-out"></div>
+      <div class="term-row">
+        <span id="term-prompt">&gt;&gt;&gt;&nbsp;</span>
+        <input id="term-in" type="text" autocomplete="off" spellcheck="false" placeholder="Python or !help">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-new">
+  <div class="modal">
+    <h3>New File</h3>
+    <p>Enter a filename. .py is added if no extension is given.</p>
+    <input type="text" id="m-new-val" placeholder="utils.py" spellcheck="false">
+    <div class="modal-row">
+      <button class="btn-cancel" id="m-new-cancel">Cancel</button>
+      <button class="btn-submit" id="m-new-ok">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-inp">
+  <div class="modal">
+    <h3>Input Required</h3>
+    <p id="m-inp-prompt" style="font-family:var(--font-mono);color:var(--tx);white-space:pre-wrap;margin-bottom:12px"></p>
+    <input type="text" id="m-inp-val" spellcheck="false" placeholder="Your answer...">
+    <div class="modal-row">
+      <button class="btn-submit" id="m-inp-ok">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+<script type="module">
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "https://esm.sh/@codemirror/view@6";
+import { EditorState } from "https://esm.sh/@codemirror/state@6";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "https://esm.sh/@codemirror/commands@6";
+import { python } from "https://esm.sh/@codemirror/lang-python@6";
+import { oneDark } from "https://esm.sh/@codemirror/theme-one-dark@6";
+import { bracketMatching, indentOnInput, syntaxHighlighting, defaultHighlightStyle, foldGutter, foldKeymap } from "https://esm.sh/@codemirror/language@6";
+import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "https://esm.sh/@codemirror/autocomplete@6";
+import { searchKeymap, highlightSelectionMatches } from "https://esm.sh/@codemirror/search@6";
+import { lintKeymap } from "https://esm.sh/@codemirror/lint@6";
+
+function desktopPath(fn) {
+  const ua = navigator.userAgent;
+  if (ua.includes('Win')) return `C:\\Users\\User\\Desktop\\${fn}`;
+  if (ua.includes('Mac')) return `/Users/User/Desktop/${fn}`;
+  return `/home/User/Desktop/${fn}`;
+}
+
+let pyodide = null, pyReady = false, running = false;
+const files = { 'main.py': `name = input("What is your name? ")
+print(f"Hello, {name}!")
+print(f"File path: {__file__}")
+` };
+let activeFile = 'main.py';
+
+const $ = id => document.getElementById(id);
+const $pill   = $('status-pill');
+const $stxt   = $('status-txt');
+const $btnRun = $('btn-run');
+const $btnStop= $('btn-stop');
+const $btnDl  = $('btn-dl');
+const $outTxt = $('out-text');
+const $outTime= $('out-time');
+const $tabsEl = $('tb-tabs');
+const $sbList = $('sb-list');
+const $ebFile = $('eb-file');
+const $ebCur  = $('eb-cur');
+const $termOut= $('term-out');
+const $termIn = $('term-in');
+const $termPr = $('term-prompt');
+const $plotsEl= $('out-plots');
+const $loader = $('loader');
+const $ldMsg  = $('ld-msg');
+
+function setStatus(s, msg) {
+  $pill.className = 'status-pill ' + s;
+  $stxt.textContent = msg;
+}
+
+function outAppend(text, cls) {
+  if (!text) return;
+  const s = document.createElement('span');
+  s.className = cls; s.textContent = text;
+  $outTxt.appendChild(s);
+  $outTxt.scrollTop = $outTxt.scrollHeight;
+}
+function outClear() { $outTxt.innerHTML = ''; }
+
+function termAppend(text, cls) {
+  if (text === null || text === undefined) return;
+  const s = document.createElement('span');
+  s.className = cls; s.textContent = text;
+  $termOut.appendChild(s);
+  $termOut.scrollTop = $termOut.scrollHeight;
+}
+
+let view = null;
+function buildEditor(doc) {
+  if (view) view.destroy();
+  view = new EditorView({
+    state: EditorState.create({
+      doc,
+      extensions: [
+        lineNumbers(), highlightActiveLineGutter(), highlightSpecialChars(),
+        history(), foldGutter(), drawSelection(), dropCursor(),
+        EditorState.allowMultipleSelections.of(true), indentOnInput(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        bracketMatching(), closeBrackets(), autocompletion(),
+        rectangularSelection(), crosshairCursor(),
+        highlightActiveLine(), highlightSelectionMatches(),
+        keymap.of([
+          ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap,
+          ...historyKeymap, ...foldKeymap, ...completionKeymap, ...lintKeymap,
+          indentWithTab,
+          { key: 'Ctrl-Enter', run: () => { runCode(); return true; } },
+          { key: 'Mod-Enter',  run: () => { runCode(); return true; } },
+        ]),
+        python(), oneDark,
+        EditorView.updateListener.of(u => {
+          if (u.docChanged) files[activeFile] = u.state.doc.toString();
+          const sel = u.state.selection.main;
+          const ln = u.state.doc.lineAt(sel.from);
+          $ebCur.textContent = `Ln ${ln.number}, Col ${sel.from - ln.from + 1}`;
+        }),
+        EditorView.theme({
+          '&': { height: '100%', background: '#13141a' },
+          '.cm-scroller': { fontFamily: "var(--font-mono)" },
+        }),
+      ]
+    }),
+    parent: $('editor-wrap')
+  });
+}
+
+function refreshUI() {
+  $tabsEl.innerHTML = '';
+  Object.keys(files).forEach(name => {
+    const t = document.createElement('div');
+    t.className = 'tab' + (name === activeFile ? ' active' : '');
+    t.innerHTML = `<span class="tab-dot"></span><span style="flex:1">${esc(name)}</span><span class="tab-x">x</span>`;
+    t.addEventListener('click', e => { if (!e.target.classList.contains('tab-x')) switchFile(name); });
+    t.querySelector('.tab-x').addEventListener('click', e => { e.stopPropagation(); deleteFile(name); });
+    $tabsEl.appendChild(t);
+  });
+  $sbList.innerHTML = '';
+  Object.keys(files).forEach(name => {
+    const d = document.createElement('div');
+    d.className = 'fi' + (name === activeFile ? ' active' : '');
+    d.innerHTML = `<span class="fi-name" title="${esc(desktopPath(name))}">${esc(name)}</span><span class="fi-rm">x</span>`;
+    d.addEventListener('click', e => { if (!e.target.classList.contains('fi-rm')) switchFile(name); });
+    d.querySelector('.fi-rm').addEventListener('click', e => { e.stopPropagation(); deleteFile(name); });
+    $sbList.appendChild(d);
+  });
+  $ebFile.textContent = activeFile;
+}
+function switchFile(name) {
+  if (name === activeFile) return;
+  files[activeFile] = view.state.doc.toString();
+  activeFile = name;
+  buildEditor(files[name]);
+  refreshUI();
+}
+function deleteFile(name) {
+  if (Object.keys(files).length <= 1) { alert('Cannot delete the only file.'); return; }
+  if (!confirm(`Delete "${name}"?`)) return;
+  delete files[name];
+  if (activeFile === name) { activeFile = Object.keys(files)[0]; buildEditor(files[activeFile]); }
+  refreshUI();
+}
+function createFile(name) {
+  name = name.trim();
+  if (!name) return;
+  if (!name.includes('.')) name += '.py';
+  if (files[name]) { alert(`"${name}" already exists.`); return; }
+  files[name] = `# ${name}\n`;
+  activeFile = name; buildEditor(files[activeFile]); refreshUI();
+}
+
+const $mNew = $('m-new'), $mNewVal = $('m-new-val');
+const doCreate = () => { createFile($mNewVal.value); $mNew.classList.remove('open'); $mNewVal.value = ''; };
+$('btn-new').onclick = $('sb-add').onclick = () => { $mNewVal.value=''; $mNew.classList.add('open'); setTimeout(()=>$mNewVal.focus(),40); };
+$('m-new-cancel').onclick = () => $mNew.classList.remove('open');
+$('m-new-ok').onclick = doCreate;
+$mNewVal.onkeydown = e => { if (e.key==='Enter') doCreate(); if (e.key==='Escape') $mNew.classList.remove('open'); };
+
+document.querySelectorAll('.out-tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.out-tab, .out-panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  $('panel-'+t.dataset.panel).classList.add('active');
+  if (t.dataset.panel === 'terminal') setTimeout(() => $termIn.focus(), 30);
+}));
+$('btn-clear').onclick = outClear;
+
+function mkResizer(id, getW, setW) {
+  const el = $(id);
+  let on=false, sx=0, sw=0;
+  el.onmousedown = e => { on=true; sx=e.clientX; sw=getW(); el.classList.add('active'); document.body.style.userSelect='none'; document.body.style.cursor='col-resize'; };
+  document.addEventListener('mousemove', e => { if (on) setW(sw + e.clientX - sx); });
+  document.addEventListener('mouseup', () => { if(on){on=false;el.classList.remove('active');document.body.style.cssText='';} });
+}
+mkResizer('res-l', () => $('sidebar').offsetWidth, w => { $('sidebar').style.width = Math.max(130,Math.min(340,w))+'px'; });
+mkResizer('res-r', () => $('output-pane').offsetWidth, w => { $('output-pane').style.width = Math.max(260,Math.min(680,w))+'px'; });
+
+function dlFile(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'text/plain'}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+$btnDl.onclick = () => { files[activeFile]=view.state.doc.toString(); dlFile(activeFile,files[activeFile]); };
+
+const $fileImportInput = $('file-import-input');
+$('btn-import').onclick = () => { $fileImportInput.value = ''; $fileImportInput.click(); };
+$fileImportInput.addEventListener('change', () => {
+  const fileList = Array.from($fileImportInput.files);
+  if (!fileList.length) return;
+  let lastImported = null;
+  let pending = fileList.length;
+  fileList.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      let name = file.name;
+      if (!name.includes('.')) name += '.py';
+      // If a file with the same name already exists, give the new one a suffix
+      if (files[name]) {
+        let base = name.replace(/\.py$/, ''), ext = name.endsWith('.py') ? '.py' : '';
+        let n = 2;
+        while (files[`${base}_${n}${ext}`]) n++;
+        name = `${base}_${n}${ext}`;
+      }
+      files[name] = e.target.result;
+      lastImported = name;
+      pending--;
+      if (pending === 0) {
+        // Switch to the last imported file
+        files[activeFile] = view.state.doc.toString();
+        activeFile = lastImported;
+        buildEditor(files[activeFile]);
+        refreshUI();
+      }
+    };
+    reader.readAsText(file);
+  });
+});
+
+const $mInp=$('m-inp'), $mInpPr=$('m-inp-prompt'), $mInpVal=$('m-inp-val');
+let inpRes=null;
+const submitInp = () => { const v=$mInpVal.value; $mInpVal.value=''; $mInp.classList.remove('open'); inpRes?.(v); inpRes=null; };
+$('m-inp-ok').onclick = submitInp;
+$mInpVal.onkeydown = e => { if(e.key==='Enter') submitInp(); };
+function requestInput(prompt) {
+  return new Promise(r => {
+    inpRes=r; $mInpPr.textContent=prompt||''; $mInpVal.value='';
+    $mInp.classList.add('open'); setTimeout(()=>$mInpVal.focus(),50);
+  });
+}
+
+async function initPyodide() {
+  $ldMsg.textContent = 'Loading...';
+  pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/' });
+  $ldMsg.textContent = 'Loading...';
+  await pyodide.loadPackage('micropip');
+  $ldMsg.textContent = 'Loading...';
+
+  window._pycssGetFiles    = () => JSON.stringify(files);
+  window._pycssDesktopPath = desktopPath;
+
+  await pyodide.runPythonAsync(`
+import sys, io, builtins, json, base64, importlib, os, traceback
+import js as _js
+
+def _input(prompt=''):
+    r = _js.globalThis.prompt(str(prompt) if prompt else 'Input:')
+    return r if r is not None else ''
+builtins.input = _input
+
+_mpl_ok = False
+def _ensure_mpl():
+    global _mpl_ok
+    if _mpl_ok: return
+    try:
+        import matplotlib; matplotlib.use('Agg'); _mpl_ok = True
+    except: pass
+
+def _get_plots():
+    try:
+        import matplotlib.pyplot as plt, io as _io
+        out = []
+        for n in plt.get_fignums():
+            buf = _io.BytesIO()
+            plt.figure(n).savefig(buf, format='png', bbox_inches='tight', dpi=110, facecolor='#13141a')
+            buf.seek(0); out.append(base64.b64encode(buf.read()).decode())
+        plt.close('all'); return out
+    except: return []
+
+_VFS = '/vfs'
+try: os.makedirs(_VFS, exist_ok=True)
+except: _VFS = '/home/pyodide'
+if _VFS not in sys.path: sys.path.insert(0, _VFS)
+
+_STDLIB = None
+_SERVER_ONLY = {'streamlit','flask','django','fastapi','tornado','uvicorn','gunicorn','aiohttp','quart','starlette','sanic'}
+
+async def _run(code, fname):
+    global _STDLIB
+    _ensure_mpl()
+    if _STDLIB is None:
+        _STDLIB = sys.stdlib_module_names | {'builtins','__future__','typing_extensions','js','pyodide','micropip','_pyodide'}
+
+    import ast, micropip
+
+    pkgs = []
+    try:
+        for node in ast.walk(ast.parse(code)):
+            if isinstance(node, ast.Import):
+                for a in node.names: pkgs.append(a.name.split('.')[0])
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                pkgs.append(node.module.split('.')[0])
+    except SyntaxError: pass
+
+    for pkg in dict.fromkeys(pkgs):
+        if pkg in _STDLIB or pkg in sys.modules: continue
+        if pkg in _SERVER_ONLY:
+            print(f'{pkg} requires a local server environment and cannot run here.')
+            continue
+        try: importlib.import_module(pkg)
+        except ImportError:
+            try:
+                await micropip.install(pkg, keep_going=True)
+            except Exception as ex:
+                print(f'Could not install {pkg}: {ex}')
+
+    fmap = json.loads(_js.globalThis._pycssGetFiles())
+    for fn, fc in fmap.items():
+        if fn != fname:
+            try:
+                with open(f'{_VFS}/{fn}', 'w') as f: f.write(fc)
+            except: pass
+
+    dpath = _js.globalThis._pycssDesktopPath(fname)
+    ns = {'__name__': '__main__', '__file__': dpath, '__spec__': None}
+    exec(compile(code, dpath, 'exec'), ns)
+    return ns
+
+def _is_complete(src):
+    import ast
+    try: ast.parse(src); return True
+    except SyntaxError as e:
+        s = str(e).lower()
+        return not any(k in s for k in ('unexpected eof','eof while','expected an indented','was never closed'))
+
+_tns = {'__name__': '__main__'}
+`);
+
+  pyReady = true;
+  $loader.style.opacity = '0';
+  setTimeout(() => { $loader.style.display='none'; }, 320);
+
+  setStatus('ok', 'Ready');
+  $btnRun.disabled = false;
+  $btnRun.classList.remove('busy');
+
+  outAppend('The peakest pycss\n', 'o-ok');
+  outAppend('Standard library fully available. Packages install automatically on first import.\n\n', 'o-sys');
+  termAppend('PyCSS Terminal\n', 't-ok');
+  termAppend('Type !help for available commands.\n\n', 't-info');
+}
+
+async function runCode() {
+  if (!pyReady || running) return;
+  running = true;
+  files[activeFile] = view.state.doc.toString();
+  const code = files[activeFile];
+
+  document.querySelectorAll('.out-tab, .out-panel').forEach(x => x.classList.remove('active'));
+  document.querySelector('.out-tab[data-panel="output"]').classList.add('active');
+  $('panel-output').classList.add('active');
+
+  outClear();
+  outAppend(`Running ${activeFile}  (${desktopPath(activeFile)})\n\n`, 'o-sys');
+  $btnRun.disabled = true;
+  $btnRun.classList.add('busy');
+  setStatus('busy', 'Running...');
+
+  pyodide.setStdout({ batched: t => outAppend(t+'\n','o-out') });
+  pyodide.setStderr({ batched: t => outAppend(t+'\n','o-err') });
+  window._pycssGetFiles = () => JSON.stringify(files);
+
+  const t0 = performance.now();
+  let ok = true;
+  try {
+    await pyodide.runPythonAsync(`await _run(${JSON.stringify(code)}, ${JSON.stringify(activeFile)})`);
+  } catch(err) {
+    ok = false;
+    const msg = (err.message||String(err))
+      .split('\n').filter(l => !l.includes('_run(') && !/^\s+at /.test(l))
+      .join('\n').trim();
+    outAppend('\n'+(msg||String(err))+'\n', 'o-err-text');
+  }
+
+  try {
+    const raw = await pyodide.runPythonAsync('_get_plots()');
+    const plots = raw?.toJs?.() ?? (Array.isArray(raw) ? raw : []);
+    if (plots?.length) {
+      $plotsEl.innerHTML = '';
+      plots.forEach((b64,i) => {
+        const c = document.createElement('div'); c.className='plot-wrap';
+        c.innerHTML=`<img src="data:image/png;base64,${b64}" loading="lazy"><div class="plot-cap">Figure ${i+1}</div>`;
+        $plotsEl.appendChild(c);
+      });
+      document.querySelectorAll('.out-tab, .out-panel').forEach(x => x.classList.remove('active'));
+      document.querySelector('.out-tab[data-panel="plots"]').classList.add('active');
+      $('panel-plots').classList.add('active');
+    }
+  } catch {}
+
+  const elapsed = ((performance.now()-t0)/1000).toFixed(3);
+  $outTime.textContent = elapsed+'s';
+  outAppend('\n'+'_'.repeat(36)+'\n', 'o-sys');
+  outAppend(ok ? `Done  (${elapsed}s)\n` : `Exited with error  (${elapsed}s)\n`, ok ? 'o-ok' : 'o-err-text');
+  setStatus(ok ? 'ok' : 'err', ok ? 'Done' : 'Error');
+  running = false; $btnRun.disabled = false; $btnRun.classList.remove('busy');
+}
+
+let tBuf=[], tHist=[], tHi=-1;
+
+function tSetPrompt(cont) {
+  $termPr.textContent = cont ? '...  ' : '>>>  ';
+  $termPr.className = cont ? 'cont' : '';
+}
+
+const HELP_CMDS = [
+  ['!python <file>',   'Run a file'],
+  ['!pip <package>',   'Install a package'],
+  ['!ls',              'List open files'],
+  ['!cat <file>',      'Print file contents'],
+  ['!download [file]', 'Download file'],
+  ['!clear',           'Clear terminal'],
+  ['!reset',           'Reset session'],
+];
+
+async function termExec(raw) {
+  const line = raw;
+  tHist.unshift(line); tHi = -1;
+
+  {
+    const _t = line.trim();
+    const _sm = _t.match(/^(pip3?|python3?|py)\b(.*)/i);
+    if (_sm) {
+      termAppend('>>> ' + line + '\n', 't-in');
+      const exe = _sm[1].toLowerCase();
+      const rest = _sm[2].trim();
+
+      const _SERVER_JS = new Set(['streamlit','flask','django','fastapi','tornado','uvicorn','gunicorn','aiohttp','quart','starlette','sanic','dash','gradio','bottle','cherrypy']);
+
+      let pipPkg = null;
+      if (exe.startsWith('pip')) {
+        pipPkg = rest.replace(/^install\s+/i, '').trim();
+      } else {
+        const _pm = rest.match(/^-m\s+pip\s+(?:install\s+)?(.+)/i);
+        if (_pm) pipPkg = _pm[1].trim();
+      }
+      if (pipPkg !== null) {
+        if (!pipPkg) { termAppend('Usage: !pip <package>\n\n','t-err'); }
+        else {
+          const _pkgBase = pipPkg.split(/[=><!\[]/)[0].trim().toLowerCase();
+          if (_SERVER_JS.has(_pkgBase)) {
+            termAppend(`${_pkgBase} needs a local Python install to run.\n\n`, 't-warn');
+          } else {
+            termAppend(`Installing ${pipPkg}...\n`, 't-sys');
+            pyodide.setStdout({ batched: t => termAppend(t+'\n','t-out') });
+            pyodide.setStderr({ batched: t => termAppend(t+'\n','t-err') });
+            try {
+              await pyodide.runPythonAsync(`import micropip; await micropip.install(${JSON.stringify(pipPkg)}, keep_going=True)`);
+              termAppend(`Done.\n`, 't-ok');
+            } catch(e) { termAppend(`Failed: ${e.message||e}\n`,'t-err'); }
+            termAppend('\n','t-out');
+          }
+        }
+        $termOut.scrollTop = $termOut.scrollHeight; return;
+      }
+
+      const _modm = rest.match(/^-m\s+(\S+)(.*)/i);
+      if (_modm) {
+        const mod = _modm[1].toLowerCase();
+        if (_SERVER_JS.has(mod)) {
+          termAppend(`${mod} needs a local Python install to run.\n\n`, 't-warn');
+        } else {
+          termAppend(`Use: import ${mod}\n\n`, 't-info');
+        }
+        $termOut.scrollTop = $termOut.scrollHeight; return;
+      }
+
+      const _rawArg = rest.replace(/^"(.+)"$|^'(.+)'$/, '$1$2').split(/\s+/)[0] || '';
+      const _base = _rawArg.replace(/\\/g,'/').split('/').pop();
+      if (_base && _base.endsWith('.py')) {
+        if (files[_base]) {
+          termAppend(`Running ${_base}...\n`, 't-sys');
+          const code = files[_base];
+          pyodide.setStdout({ batched: t => termAppend(t+'\n','t-out') });
+          pyodide.setStderr({ batched: t => termAppend(t+'\n','t-err') });
+          window._pycssGetFiles = () => JSON.stringify(files);
+          try {
+            await pyodide.runPythonAsync(`await _run(${JSON.stringify(code)}, ${JSON.stringify(_base)})`);
+            termAppend(`${_base} finished.\n\n`, 't-ok');
+          } catch(e) {
+            const m=(e.message||String(e)).split('\n').filter(l=>l.trim()&&!l.includes('_run(')).join('\n');
+            termAppend((m||String(e)).trim()+'\n\n','t-err');
+          }
+        } else {
+          termAppend(`"${_base}" is not open.\n`, 't-err');
+          termAppend(`Open files: ${Object.keys(files).join(', ')}\n\n`, 't-info');
+        }
+        $termOut.scrollTop = $termOut.scrollHeight; return;
+      }
+
+      termAppend(`Use !pip to install packages or !python to run a file. Type !help for all commands.\n\n`, 't-info');
+      $termOut.scrollTop = $termOut.scrollHeight; return;
+    }
+  }
+
+  if (line.trim().startsWith('!')) {
+    termAppend('>>> ' + line + '\n', 't-in');
+    const parts = line.trim().slice(1).trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
+
+    if (cmd === 'help' || cmd === '?') {
+      termAppend('\n', 't-info');
+      HELP_CMDS.forEach(([k,v]) => {
+        termAppend(`  ${k.padEnd(20)} ${v}\n`, 't-info');
+      });
+      termAppend('\n', 't-info');
+    } else if (cmd === 'clear') {
+      $termOut.innerHTML = '';
+    } else if (cmd === 'reset') {
+      await pyodide.runPythonAsync('_tns.clear(); _tns["__name__"]="__main__"');
+      termAppend('Session reset.\n\n', 't-sys');
+    } else if (cmd === 'ls') {
+      Object.keys(files).forEach(f => termAppend(`  ${f}  (${desktopPath(f)})\n`, 't-out'));
+      termAppend('\n','t-out');
+    } else if (cmd === 'cat') {
+      const fn=parts[1];
+      if (!fn) termAppend('Usage: !cat <filename>\n\n','t-err');
+      else if (!files[fn]) termAppend(`File not found: ${fn}\n\n`,'t-err');
+      else { termAppend(files[fn]+'\n','t-out'); }
+    } else if (cmd === 'pip') {
+      const pkg = parts.slice(1).join(' ');
+      if (!pkg) { termAppend('Usage: !pip <package>\n\n','t-err'); return; }
+      termAppend(`Installing ${pkg}...\n`, 't-sys');
+      pyodide.setStdout({ batched: t => termAppend(t+'\n','t-out') });
+      pyodide.setStderr({ batched: t => termAppend(t+'\n','t-err') });
+      try {
+        await pyodide.runPythonAsync(`import micropip; await micropip.install(${JSON.stringify(pkg)}, keep_going=True)`);
+        termAppend(`Done.\n`, 't-ok');
+      } catch(e) { termAppend(`Failed: ${e.message||e}\n`,'t-err'); }
+      termAppend('\n','t-out');
+    } else if (cmd === 'python') {
+      const fn = parts[1];
+      if (!fn) { termAppend('Usage: !python <filename>\n\n','t-err'); return; }
+      const code = files[fn];
+      if (code === undefined) { termAppend(`File not found: "${fn}"\nOpen files: ${Object.keys(files).join(', ')}\n\n`,'t-err'); return; }
+      termAppend(`Running ${fn}...\n`, 't-sys');
+      pyodide.setStdout({ batched: t => termAppend(t+'\n','t-out') });
+      pyodide.setStderr({ batched: t => termAppend(t+'\n','t-err') });
+      window._pycssGetFiles = () => JSON.stringify(files);
+      try {
+        await pyodide.runPythonAsync(`await _run(${JSON.stringify(code)}, ${JSON.stringify(fn)})`);
+        termAppend(`${fn} finished.\n\n`, 't-ok');
+      } catch(e) {
+        const m=(e.message||String(e)).split('\n').filter(l=>l.trim()&&!l.includes('_run(')).join('\n');
+        termAppend((m||String(e)).trim()+'\n\n','t-err');
+      }
+    } else if (cmd === 'download') {
+      const fn = parts[1] || activeFile;
+      if (!files[fn]) { termAppend(`File not found: ${fn}\n\n`,'t-err'); return; }
+      dlFile(fn, files[fn]);
+      termAppend(`Saved ${fn}.\n\n`,'t-ok');
+    } else {
+      termAppend(`Unknown command: !${cmd}  (try !help)\n\n`,'t-err');
+    }
+    $termOut.scrollTop = $termOut.scrollHeight;
+    return;
+  }
+
+  tBuf.push(line);
+  const full = tBuf.join('\n');
+  termAppend((tBuf.length===1 ? '>>> ' : '... ') + line + '\n', 't-in');
+
+  const empty = line.trim() === '';
+  let complete = true;
+  if (!empty) {
+    try { complete = await pyodide.runPythonAsync(`_is_complete(${JSON.stringify(full)})`); }
+    catch { complete = true; }
+  }
+
+  if (!complete && !empty) {
+    tSetPrompt(true); return;
+  }
+
+  const src = tBuf.join('\n').trim();
+  tBuf = []; tSetPrompt(false);
+  if (!src) return;
+
+  pyodide.setStdout({ batched: t => termAppend(t+'\n','t-out') });
+  pyodide.setStderr({ batched: t => termAppend(t+'\n','t-err') });
+  window._pycssGetFiles = () => JSON.stringify(files);
+
+  try {
+    const result = await pyodide.runPythonAsync(`
+import ast as _a
+_rv = None; _rshow = False
+try:
+    _rt = _a.parse(${JSON.stringify(src)}, mode='eval')
+    _rv = eval(compile(_rt,'<terminal>','eval'), _tns)
+    _rshow = _rv is not None
+except SyntaxError:
+    exec(compile(${JSON.stringify(src)},'<terminal>','exec'), _tns)
+repr(_rv) if _rshow else None
+`);
+    if (result !== null && result !== undefined) {
+      termAppend(String(result)+'\n', 't-out');
+    }
+  } catch(e) {
+    const msg=(e.message||String(e)).split('\n')
+      .filter(l=>l.trim()&&!l.includes('File "<exec"')&&!l.includes('_a.')&&!/^\s+at /.test(l))
+      .slice(-4).join('\n');
+    termAppend((msg||String(e)).trim()+'\n','t-err');
+  }
+  termAppend('\n','t-out');
+  $termOut.scrollTop = $termOut.scrollHeight;
+}
+
+$termIn.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') { const v=$termIn.value; $termIn.value=''; await termExec(v); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if(tHi<tHist.length-1){tHi++;$termIn.value=tHist[tHi];} }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); if(tHi>0){tHi--;$termIn.value=tHist[tHi];}else{tHi=-1;$termIn.value='';} }
+});
+
+$btnRun.addEventListener('click', runCode);
+$btnStop.addEventListener('click', () => {
+  if (!running) return;
+  try { pyodide.runPython('raise KeyboardInterrupt'); } catch {}
+  running = false; $btnRun.disabled=false; $btnRun.classList.remove('busy');
+  setStatus('err','Stopped'); outAppend('\nStopped.\n','o-warn');
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); runCode(); }
+});
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+buildEditor(files[activeFile]);
+refreshUI();
+initPyodide().catch(err => {
+  $ldMsg.innerHTML = `Failed to load.<br>${esc(err.message)}<br><span style="opacity:.6">Check your connection and refresh.</span>`;
+  document.querySelector('.ld-bar').style.cssText = 'background:var(--rd);width:100%;animation:none';
+});
+</script>
+</body>
+</html>
